@@ -1,0 +1,38 @@
+name: Build Co Caro .exe
+
+on:
+  push:
+    paths:
+      - "caro/**"
+      - ".github/workflows/build-caro-exe.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install pygame pyinstaller
+      - name: Build exe
+        working-directory: caro
+        run: pyinstaller --onefile --windowed --name CoCaro caro.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CoCaro-windows
+          path: caro/dist/CoCaro.exe
+      - name: Publish release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="caro-${GITHUB_SHA::7}"
+          gh release create "$TAG" caro/dist/CoCaro.exe \
+            --target "$GITHUB_SHA" --title "Cờ Caro ($TAG)" \
+            --notes "Tải CoCaro.exe về và bấm đúp để chơi." --prerelease
